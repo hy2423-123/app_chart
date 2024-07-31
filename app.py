@@ -53,11 +53,11 @@ if uploaded_file is not None:
         
         pie_time_data = filtered_data['time_of_day'].value_counts().reset_index()
         pie_time_data.columns = ['TimeOfDay', 'Count']  # Explicitly naming the columns
-        pie_time = go.Pie(labels=pie_time_data['TimeOfDay'], values=pie_time_data['Count'], name="Time of Day")
+        pie_time = go.Pie(labels=pie_time_data['TimeOfDay'], values=pie_time_data['Count'], name="Time of Day", title="Time of Day")
         
         pie_color_data = filtered_data['color'].value_counts().reset_index()
         pie_color_data.columns = ['Color', 'Count']  # Explicitly naming the columns
-        pie_color = go.Pie(labels=pie_color_data['Color'], values=pie_color_data['Count'], name="Miles Prime Category")
+        pie_color = go.Pie(labels=pie_color_data['Color'], values=pie_color_data['Count'], name="Miles Prime Category", title="Miles Prime Category")
 
         fig.add_trace(pie_time, 1, 1)
         fig.add_trace(pie_color, 1, 2)
