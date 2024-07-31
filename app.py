@@ -4,7 +4,7 @@ import plotly.express as px
 
 # Function to load data
 def load_data(uploaded_file):
-    df = pd.read_csv(uploaded_file)
+    df = pd.read_csv(uploaded_file, low_memory=False)
     # Convert columns to datetime
     df['origin_arrival_time'] = pd.to_datetime(df['origin_arrival_time'], format='%H:%M:%S')
     df['dest_scheduled_time'] = pd.to_datetime(df['dest_scheduled_time'], format='%H:%M:%S')
