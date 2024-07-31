@@ -4,36 +4,49 @@ import plotly.express as px
 
 # Function to load data
 def load_data(uploaded_file):
-    df = pd.read_csv(uploaded_file, low_memory=False)
-    # Convert columns to datetime
-    df['origin_arrival_time'] = pd.to_datetime(df['origin_arrival_time'], format='%H:%M:%S')
-    df['dest_scheduled_time'] = pd.to_datetime(df['dest_scheduled_time'], format='%H:%M:%S')
+    df = pd.read_csv(uploaded_file, low_memory=False)  # Address mixed types warning
+    # Convert columns to datetime, handling errors
+    df['origin_arrival_time'] = pd.to_datetime(df['origin_arrival_time'], format='%H:%M:%S', errors='coerce')
+    df['dest_scheduled_time'] = pd.to_datetime(df['dest_scheduled_time'], format='%H:%M:%S', errors='coerce')
     df['origin_depart_date'] = pd.to_datetime(df['origin_depart_date'], errors='coerce')
+    
+    # Handle missing 'dest_scheduled_time'
     df['dest_scheduled_time'] = df.apply(
-        lambda row: row['origin_arrival_time'] + pd.Timedelta(hours=3) if pd.isnull(row['dest_scheduled_time']) and pd.notnull(row['origin_arrival_time']) else row['dest_scheduled_time'],
+        lambda row: row['origin_arrival_time'] + pd.Timedelta(hours=3) 
+                if pd.isnull(row['dest_scheduled_time']) and pd.notnull(row['origin_arrival_time']) 
+                else row['dest_scheduled_time'],
         axis=1
-    )   
-    df = df.dropna(subset=['origin_arrival_time', 'dest_scheduled_time']) 
+    )
+    
+    # Ensure no NaN dates after adjustments
+    df = df.dropna(subset=['origin_arrival_time', 'dest_scheduled_time', 'origin_depart_date'])
+    
     return df
 
 # Sidebar for file upload
 uploaded_file = st.sidebar.file_uploader("Choose a CSV file", type="csv")
 if uploaded_file is not None:
     df_cleaned = load_data(uploaded_file)
+    
+    # Assuming 'miles_prime' column exists in your data
     if 'miles_prime' in df_cleaned.columns:
         df_cleaned['color'] = df_cleaned['miles_prime'].apply(lambda x: 'High (Above 50)' if x > 50 else 'Low (Below 50)')
 
-    available_dates = df_cleaned['origin_depart_date'].dt.date.unique()
+    # Generate a list of available dates, including an option for 'Select All'
+    available_dates = df_cleaned['origin_depart_date'].dt.date.dropna().unique()
     available_dates.sort()
     date_options = ["Select All"] + list(available_dates)
 
+    # Sidebar - Date picker as a selectbox
     selected_date_option = st.sidebar.selectbox("Select a date to display the Gantt chart:", date_options)
 
+    # Filter data based on selected date
     if selected_date_option == "Select All":
         filtered_data = df_cleaned
     else:
         filtered_data = df_cleaned[df_cleaned['origin_depart_date'].dt.date == selected_date_option]
 
+    # Prepare and display the Gantt chart with color coding
     if not filtered_data.empty:
         fig = px.timeline(
             filtered_data,
@@ -52,4 +65,3 @@ if uploaded_file is not None:
         st.write("No data available for the selected option.")
 else:
     st.write("Please upload a CSV file to begin.")
-
